@@ -73,12 +73,14 @@ export default {
 					console.log('【警告】房间已存在')
 					this.$refs.changeRoom.showWarnning('房间已存在')
 				}
+				this.removeServerListener('create room success')
 			})
 			socket.emit('create room', createData)
 			socket.once('create room success', (joinData) => {
 				console.log('创建房间成功', createData)
 				// 房间创建完成随即进入房间
 				this.joinRoom(joinData);
+				this.removeServerListener('warnning')
 			})
 		},
 		// 显示 change room 组建，加载其子组件
@@ -98,6 +100,7 @@ export default {
 					console.log('【警告】已在房间中');
 					this.$refs.changeRoom.showWarnning('已经在房间中')
 				}
+				this.removeServerListener('join room success')
 			})
 			socket.emit('join room', joinData)
 			socket.once('join room success', (roomData) => {
@@ -132,13 +135,12 @@ export default {
 				// 订阅接受消息事件
 				socket.on('send message', (msgData) => {
 					if (msgData.target==='myself') {
-						console.log(msgData)
 						this.sendMessage(msgData)
 					} else {
-						console.log(msgData)
 						this.sendMessage(msgData)
 					}
 				})
+				this.removeServerListener('warnning')
 			})
 		},
 		// 触发离开房间事件
