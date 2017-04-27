@@ -19,6 +19,11 @@
 					<button @click="logout">注销</button>
 				</div>
 			</div>
+			<div class="room-members">
+				<ul>
+					<li v-for="(value, key) in users">{{ key + ': ' + value }}</li>
+				</ul>
+			</div>
 		</div>
 	</div>
 </template>
@@ -40,14 +45,20 @@ export default {
 		},
 		users: {
 			type: Array,
-			default () {
-				return []
+			default: function() {
+				return [
+					'超人',
+					'超人他爸',
+					'超人他爷爷',
+					'蝙蝠侠',
+					'蝙蝠侠他爸',
+				]
 			}
 		}
 	},
 	data () {
 		return {
-			avatar: require('../assets/avatar.jpg')
+			avatar: require('../assets/avatar.jpg'),
 		}
 	},
 	methods: {
@@ -75,8 +86,7 @@ export default {
 	width: 260px;
 	height: 100%;
 	background: #2e3238;
-	overflow-x: hidden;
-	overflow-y: auto;
+	overflow: hidden;
 	z-index: 999;
 }
 .user-info {
@@ -156,5 +166,19 @@ export default {
 .utils button:last-child {
 	position: absolute;
 	right: 0;
+}
+.room-members {
+	height: 100%;
+	overflow-x: hidden;
+	overflow-y: scroll;
+	color: #ccc;
+	font-weight: 200;
+	padding: 12px;
+}
+.room-members::-webkit-scrollbar {
+	display: none;
+}
+.room-members li {
+
 }
 </style>

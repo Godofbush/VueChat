@@ -1,6 +1,8 @@
 <template>
 	<div>
-		<p>请输入房间号，然后点击{{ theType }}房间以继续。</p>
+		<p v-show="changeType==='enter'">请输入房间号，然后点击{{ theType }}房间以继续。</p>
+		<p v-show="changeType==='create'">请输入房间号，然后点击{{ theType }}房间以继续。密码为空则表示不设密码。</p>
+
 		<p class="notice">注意，房间号由四个数字组成，如：0001</p>
 		<input type="text" name="roomid" v-model="roomId" placeholder="房间号">
 		<input type="text" name="roompwd" v-model="roomPwd" placeholder="密码">
@@ -30,7 +32,7 @@ export default {
 					roomId: this.roomId,
 					roomPwd: this.roomPwd
 				})
-			} else {
+			} else if (this.changeType==='create') {
 				this.$emit('create-room', {
 					roomId: this.roomId,
 					roomPwd: this.roomPwd

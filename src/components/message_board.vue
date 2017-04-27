@@ -13,9 +13,9 @@ export default {
 			if (msgBoard.scrollHeight-msgBoard.scrollTop<560) {
 				flag = true;
 			}
+			// 显示消息
 			msgBoard.appendChild(message)
-			console.log(msgBoard.scrollHeight)
-			console.log(msgBoard.scrollTop)
+			// 出现新消息自动滚动到最新位置
 			if (flag) {
 				msgBoard.scrollTop = msgBoard.scrollHeight
 			}
@@ -63,7 +63,7 @@ export default {
 	display: block;
 	clear: both;
 }
-.msg-img, .msg-img-self {
+.msg-avatar, .msg-avatar-self {
 	width: 38px;
 	height: 38px;
 	border-radius: 3px;
@@ -86,10 +86,10 @@ export default {
 	min-width: 38px;
 	min-height: 38px;
 }
-.msg-img {
+.msg-avatar {
 	float: left;
 }
-.msg-img-self {
+.msg-avatar-self {
 	float: right;
 }
 .msg-name {
@@ -133,5 +133,18 @@ export default {
 	left: 2px;
 	top: 19px;
 	background: #fcfcfc;
+}
+.msg-img, .msg-img-self {
+	max-width: 368px;
+	max-height: 368px;
+	border-radius: 4px;
+}
+.msg-img {
+	float: left;
+	transform: translateX(8px);
+}
+.msg-img-self {
+	float: right;
+	transform: translateX(-8px);
 }
 </style>

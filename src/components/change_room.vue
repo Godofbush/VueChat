@@ -7,6 +7,7 @@
 				@join-room="joinRoom" 
 				@create-room="createRoom">
 			</change-type>
+			<p class="note-warnning">{{ warnning }}</p>
 		</div>
 	</div>
 </template>
@@ -29,7 +30,7 @@ export default {
 	},
 	data () {
 		return {
-
+			warnning: ''
 		}
 	},
 	methods: {
@@ -43,6 +44,10 @@ export default {
 		// 触发创建房间的事件
 		createRoom ( createData ) {
 			this.$emit('create-room', createData)
+		},
+		// 警告
+		showWarnning ( data ) {
+			this.warnning = data
 		}
 	}
 }
@@ -105,5 +110,11 @@ button:hover {
 	color: #333;
 	font-size: 14px;
 	cursor: pointer;
+}
+.note-warnning {
+	margin-top: 8px;
+	height: 1.5rem;
+	line-height: 1.5;
+	color: rgb(255, 80, 80);
 }
 </style>

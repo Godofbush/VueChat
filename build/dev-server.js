@@ -90,6 +90,7 @@ var runningserver = server.listen(port)
 var io = IO(server);
 var room_info = {};  // 维护一个全局对象，用来存储房间信息
 var rooms = [];      // 用于存储当前存在的所有房间的房间号
+var timeouts = {};     // 释放房间计时器
 io.on('connection', function (socket) {
 	var userInfo = {
 		username: ''
@@ -122,16 +123,35 @@ io.on('connection', function (socket) {
 				roomPwd: pwd
 			});
 			console.log('房间%s创建完成', room_id);
-		}, function () {
-			console.log('！！！！！房间 %s 创建失败', room_id);
+		}, function (err) {
+			console.log('【警告】房间 %s 创建失败', room_id);
+			if(err==='roomExisted') {
+				console.log('【警告】房间 %s 已存在', room_id);
+				socket.emit('warnning', {msg: 'roomExisted'})
+			}
 		});
 	});
 
 	// 加入房间
 	socket.on('join room', function(joinData) {
 		var room_id = joinData.roomId;
-		var id = 'R' + room_id;
 		var pwd = joinData.roomPwd;
+
+		var id = 'R' + room_id;
+		var id_before = 'R' + room_id_before;
+
+		// 检查是否房间不存在
+		if (!room_info[id]) {
+			console.log('【警告】房间 %s 不存在', room_id);
+			socket.emit('warnning', { msg: 'roomUnexist' });
+			return
+		}
+		// 检查是否用户已经在该房间中
+		if (id_before == id) {
+			console.log('【警告】已在房间 %s 中', room_id);
+			socket.emit('warnning', { msg: 'alreadyInRoom' });
+			return
+		}
 
 		joinRoom(userInfo.username, room_id, pwd, function() {
 			console.log('=======================================');
@@ -165,7 +185,7 @@ io.on('connection', function (socket) {
 	// 离开房间
 	socket.on('leave room', function() {
 		var id = 'R' + room_id_before;
-		leaveRoom(room_info[id].username, room_id_before, function() {
+		leaveRoom(userInfo.username, room_id_before, function() {
 			console.log('离开房间 %s 成功', room_id_before);
 			socket.emit('leave room success', {
 				username: userInfo.username,
@@ -186,9 +206,8 @@ io.on('connection', function (socket) {
 	// 创建房间方法
 	var createRoom = function ( roomId, pwd , success, fail) {
 		var id = 'R' + roomId;
-		if (rooms.indexOf(id)>-1) {
-			console.log('房间 %s 已存在', roomId);
-			if (fail) { return fail(); };
+		if (room_info[id]) {
+			if (fail) { return fail('roomExisted'); };
 		}
 		// 创建房间信息对象，并写入 room_info
 		room_info[id] = {
@@ -212,8 +231,15 @@ io.on('connection', function (socket) {
 
 	// 加入房间方法
 	var joinRoom = function ( username, roomId, pwd, success ) {
-		var id = 'R' + roomId;
+		var room_id = roomId;
+		var id = 'R' + room_id;
+		var id_before = 'R' + room_id_before;
 		var flag = false;
+
+		// 存在用户加入房间，则清除释放计时器
+		clearTimeout(timeouts[id]);
+		delete timeouts[id];
+
 		if (room_info[id].password.isSet) {
 			flag = (room_info[id].password.content===pwd) ? true : false;
 		} else {
@@ -229,26 +255,54 @@ io.on('connection', function (socket) {
 
 	// 离开房间方法
 	var leaveRoom = function ( username, roomId, success ) {
-		var id = 'R' + roomId;
+		var room_id = roomId;
+
+		var id = 'R' + room_id;
 		socket.leave(id);
 		room_info[id].users.splice(room_info[id].users.indexOf(username), 1);
 		room_info[id].quantity--;
 
+		// 如果房间没人，则过3分钟自动释放
+		if (room_info[id].quantity==0) {
+			releaseRoom(room_id)
+		}
+
 		if (success) { return success(); }
 	}
 
+	// 释放房间方法
+	var releaseRoom = function ( roomId ) {
+		var room_id = roomId;
+		var id = 'R' + room_id;
+		timeouts[id] = setTimeout(function(){
+			delete room_info[id];
+			console.log('房间 %s 已释放', room_id);
+			clearTimeout(timeouts[id]);
+			delete timeouts[id];
+		}, 10000)
+	}
+
 	// 发送消息
-	socket.on('handle message', function (msg) {
+	socket.on('handle message', function (data) {
+		var type = data.type;
+		var msg = data.msg;
+
 		var id = 'R' + room_id_before;
-		var trimedMsg = msg.trim();
+		if (type === 'text') {
+			var trimedMsg = msg.trim();
+		} else if (type === 'image') {
+			var trimedMsg = msg;
+		}
 		socket.emit('send message', {
 			type: 'common',
+			dataType: type,
 			msg: trimedMsg,
 			name: userInfo.username,
 			target: 'myself'
 		})
 		socket.to(id).broadcast.emit('send message', {
 			type: 'common',
+			dataType: type,
 			msg: trimedMsg,
 			name: userInfo.username
 		})

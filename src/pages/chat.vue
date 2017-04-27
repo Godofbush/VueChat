@@ -14,7 +14,7 @@
 			<message-board ref="messageBoard"></message-board>
 			<message-input @send-message="msgHandler"></message-input>
 		</div>
-		<change-room 
+		<change-room ref="changeRoom"
 			@close-myself="closeChangeRoom" 
 			@create-room="createRoom" 
 			@join-room="joinRoom"
@@ -56,7 +56,7 @@ export default {
 		// 获取用户数据
 		fetchData () {
 			socket.emit('fetch data')
-			socket.on('return data', (userInfo) => {
+			socket.once('return data', (userInfo) => {
 				this.username = userInfo.username
 			})
 		},
@@ -67,8 +67,15 @@ export default {
 		},
 		// 与服务端通信，用于创建房间的事件
 		createRoom ( createData ) {
+			// 警告信息
+			socket.once('warnning', (data) => {
+				if (data.msg==='roomExisted') {
+					console.log('【警告】房间已存在')
+					this.$refs.changeRoom.showWarnning('房间已存在')
+				}
+			})
 			socket.emit('create room', createData)
-			socket.on('create room success', (joinData) => {
+			socket.once('create room success', (joinData) => {
 				console.log('创建房间成功', createData)
 				// 房间创建完成随即进入房间
 				this.joinRoom(joinData);
@@ -81,8 +88,19 @@ export default {
 		},
 		// 与服务端通信，用于加入房间的事件
 		joinRoom ( joinData ) {
+			// 警告信息
+			socket.once('warnning', (data) => {
+				if (data.msg === 'roomUnexist') {
+					console.log('【警告】房间不存在')
+					this.$refs.changeRoom.showWarnning('房间不存在')
+				}
+				if (data.msg === 'alreadyInRoom') {
+					console.log('【警告】已在房间中');
+					this.$refs.changeRoom.showWarnning('已经在房间中')
+				}
+			})
 			socket.emit('join room', joinData)
-			socket.on('join room success', (roomData) => {
+			socket.once('join room success', (roomData) => {
 				console.log('加入房间成功')
 				this.isShowChangeRoomBoard = false
 				this.username = roomData.username
@@ -95,7 +113,10 @@ export default {
 					this.quantity = roomData.quantity
 					this.users = roomData.users
 
-					this.sendMessage('system', roomData.username + ' 加入了房间')
+					this.sendMessage({
+						type: 'system', 
+						msg: roomData.username + ' 加入了房间'
+					})
 				})
 				// 订阅别人离开房间事件
 				socket.on('someone left', (roomData) => {
@@ -103,14 +124,19 @@ export default {
 					this.quantity = roomData.quantity
 					this.users = roomData.users
 
-					this.sendMessage('system', roomData.username + ' 离开了房间')
+					this.sendMessage({
+						type: 'system', 
+						msg: roomData.username + ' 离开了房间'
+					})
 				})
 				// 订阅接受消息事件
 				socket.on('send message', (msgData) => {
 					if (msgData.target==='myself') {
-						this.sendMessage(msgData.type, msgData.msg, msgData.name, true)
+						console.log(msgData)
+						this.sendMessage(msgData)
 					} else {
-						this.sendMessage(msgData.type, msgData.msg, msgData.name, false)
+						console.log(msgData)
+						this.sendMessage(msgData)
 					}
 				})
 			})
@@ -118,12 +144,22 @@ export default {
 		// 触发离开房间事件
 		leaveRoom () {
 			socket.emit('leave room')
-			socket.on('leave room success', (roomData) => {
+			socket.once('leave room success', (roomData) => {
 				console.log('离开房间成功')
 				this.roomId = '----'
 				this.quantity = '-'
 				this.users = []
+				this.removeServerListener('someone joined')
+				this.removeServerListener('someone left')
+				this.removeServerListener('send message')
 			})
+		},
+		// 删除不需要的监听器，释放内存，避免发生错误
+		removeServerListener (listener) {
+			var listenerName = listener
+			if (socket.hasListeners(listenerName)) {
+				socket.off(listenerName)
+			}
 		},
 		logout () {
 
@@ -131,6 +167,7 @@ export default {
 		// 关闭 change room 面板
 		closeChangeRoom () {
 			this.isShowChangeRoomBoard = false;
+			this.$refs.changeRoom.showWarnning('');
 		},
 		// 系统消息工厂方法
 		systemMessageFactory (message) {
@@ -143,43 +180,58 @@ export default {
 			return div
 		},
 		// 普通消息工厂方法
-		commonMessageFactory (message, name, isSelf) {
+		commonMessageFactory (message, name, isSelf, dataType) {
 			var div = document.createElement('div')
-			var img = document.createElement('img')
+			var avatar = document.createElement('img')
 			var spanName = document.createElement('span')
 			var spanMsg = document.createElement('span')
-			// var spanArrow = document.createElement('span')
 			div.classList.add('common-message')
 			if (isSelf) {
-				img.classList.add('msg-img-self')
+				avatar.classList.add('msg-avatar-self')
 				spanName.classList.add('msg-name-self')
 				spanMsg.classList.add('msg-msg-self')
-				// spanArrow.classListadd('msg-arrow-self')
 			} else {
-				img.classList.add('msg-img')
+				avatar.classList.add('msg-avatar')
 				spanName.classList.add('msg-name')
 				spanMsg.classList.add('msg-msg')
-				// spanArrow.classListadd('msg-arrow')
 			}
-			img.setAttribute('src', require('../assets/avatar.jpg'))
+			avatar.setAttribute('src', require('../assets/avatar.jpg'))
 			spanName.textContent = name
-			spanMsg.textContent = message
-			div.appendChild(img)
+			div.appendChild(avatar)
 			div.appendChild(spanName)
-			div.appendChild(spanMsg)
+			// 类型选择
+			if (dataType==='text') {
+				spanMsg.textContent = message
+				div.appendChild(spanMsg)
+			} else if (dataType==='image') {
+				var image = document.createElement('img')
+				image.src = message
+				if (isSelf) {
+					image.classList.add('msg-img-self')
+				} else {
+					image.classList.add('msg-img')
+				}
+				div.appendChild(image)
+			}
 			return div
 		},
 		// 消息控制，将子组件发送的信息传入 sendMessage 方法
-		msgHandler (msg) {
-			socket.emit('handle message', msg)
+		msgHandler (data) {
+			socket.emit('handle message', data)
 		},
 		// 发送消息
-		sendMessage (type, message, name, isSelf) {
+		sendMessage (data) {
+			var type = data.type
+			var dataType = data.dataType
+			var message = data.msg
+			var name = data.name
+			var isSelf = data.target === 'myself'
+
 			if (type==='system') {
 				var msg = this.systemMessageFactory(message)
 				this.$refs.messageBoard.sendMessage(msg)
-			} else {
-				var msg = this.commonMessageFactory(message, name, isSelf)
+			} else if (type==='common') {
+				var msg = this.commonMessageFactory(message, name, isSelf, dataType)
 				this.$refs.messageBoard.sendMessage(msg)
 			}
 		}
