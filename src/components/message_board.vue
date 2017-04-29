@@ -19,6 +19,13 @@ export default {
 			if (flag) {
 				msgBoard.scrollTop = msgBoard.scrollHeight
 			}
+			var msgStyle = message.firstElementChild.style
+			var a = '0.6'
+			var timeout = setInterval(function() {
+				msgStyle.backgroundColor = 'rgba(0, 0, 0, ' + a + ')'
+				a = a-0.01
+				if (a <= 0.2) { clearInterval(timeout) }
+			}, 30)
 		}
 	}
 }
@@ -47,7 +54,7 @@ export default {
 .system-message {
 	display: inline-block;
 	color: #fff;
-	background: rgba(0, 0, 0, 0.2);
+	background: rgba(0, 0, 0, 0.5);
 	padding: 2px 8px;
 	font-size: 12px;
 	font-weight: 100;

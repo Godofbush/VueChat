@@ -110,6 +110,10 @@ export default {
 				this.roomId = roomData.roomId
 				this.quantity = roomData.quantity
 				this.users = roomData.users
+				this.sendMessage({
+					type: 'system',
+					msg: '您已加入 ' + this.roomId + '房间'
+				})
 				// 订阅别人加入房间事件
 				socket.on('someone joined', (roomData) => {
 					console.log('%s 加入了房间', roomData.username)
@@ -148,6 +152,10 @@ export default {
 			socket.emit('leave room')
 			socket.once('leave room success', (roomData) => {
 				console.log('离开房间成功')
+				this.sendMessage({
+					type: 'system',
+					msg: '您已离开 ' + this.roomId + '房间'
+				})
 				this.roomId = '----'
 				this.quantity = '-'
 				this.users = []
