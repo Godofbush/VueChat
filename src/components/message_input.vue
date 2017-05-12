@@ -1,9 +1,17 @@
 <template>
-	<div class="message-input">
-		<textarea v-model="msg"></textarea>
+	<div class="message-input" @click="focusPre">
+		<pre contenteditable="true" @click="setLastEditRange" @keyup="setLastEditRange"></pre>
 		<div class="input-bottom">
 			<input type="file" name="file" id="file" @change="changeFile">
 			<label for="file" class="file-label">图片</label>
+			<div class="faces">
+				<span @click="displayFaces=true">表情</span>
+				<transition name="faces-fade" @enter="whenFacesEnter">
+					<div class="faces-drop-down" v-show="displayFaces" tabindex="-1" @blur="displayFaces=false">
+						<img v-for="img in imgs" :data-code="img.code" :src="img.src" @click="insertImage">
+					</div>
+				</transition>
+			</div>
 			<button @click="sendMessage">发送</button>
 		</div>
 	</div>
@@ -13,17 +21,54 @@
 export default {
 	data () {
 		return {
-			msg: ''
+			msgs: [],
+			imgs: [],
+			displayFaces: false,
+			lastEditRange: null
 		}
+	},
+	created: function() {
+		var imgIndex = [2, 5, 6, 10, 11, 14, 19, 20, 21, 26, 38, 44, 97, 98, 99]
+		var name = ''
+		imgIndex.forEach((el, index)=>{
+			switch (el.toString().length) {
+				case 1: 
+					name = '00' + el.toString() + '@2x'
+					break
+				case 2:
+					name = '0' + el.toString() + '@2x'
+					break
+				case 3:
+					name = el.toString() + '@2x'
+					break
+				default:
+					name = null
+			}
+			if (name) {
+				this.imgs.push({
+					code: name,
+					src: require('../assets/face/'+name+'.png')
+				})
+			} else {
+				console.log('图片名错误')
+			}
+		})
 	},
 	methods: {
 		sendMessage () {
-			var msg = this.msg
+			var pre = this.$el.querySelector('pre')
+
+			Array.prototype.forEach.call(pre.querySelectorAll('img'), (el) => {
+				var code = el.getAttribute('data-code')
+				el.setAttribute('src', require('../assets/face/' + code + '.gif'))
+			})
+
+			this.msgs.push(pre.innerHTML)
 			this.$emit('send-message', {
 				type: 'text',
-				msg: msg
+				msg: this.msgs.pop()
 			})
-			this.msg = ''
+			pre.innerHTML = ''
 		},
 		changeFile (e) {
 			var img = e.target.files[0]
@@ -38,6 +83,36 @@ export default {
 				}
 				reader.readAsDataURL(img)
 			}
+		},
+		whenFacesEnter () {
+			this.$el.querySelector('.faces-drop-down').focus()
+		},
+		setLastEditRange (e) {
+			this.lastEditRange = window.getSelection().getRangeAt(0)
+		},
+		insertImage (e) {
+			var pre = this.$el.querySelector('pre')
+			pre.focus()
+			var selection = window.getSelection()
+			var lastEditRange = this.lastEditRange
+			if (lastEditRange) {
+				selection.removeAllRanges()
+				selection.addRange(lastEditRange)
+			}
+			document.execCommand('insertImage', null, e.target.getAttribute('src'))
+
+
+			if (pre.childNodes.length>0) {
+				var child = pre.childNodes[selection.anchorOffset-1]
+				child.style.width = '18px'
+				child.setAttribute('data-code', e.target.getAttribute('data-code'))
+			}
+
+		},
+		focusPre (e) {
+			if (e.target == e.currentTarget) {
+				this.$el.querySelector('pre').focus()
+			}
 		}
 	}
 }
@@ -51,14 +126,20 @@ export default {
 	padding-left: 260px;
 	height: 160px;
 	border-top: 1px solid #ccc;
+	background-color: #fff;
+	cursor: text;
 }
-textarea {
+pre {
 	width: 100%;
-	height: 100%;
+	max-height: 100%;
 	border: 0;
 	outline: none;
 	padding: 8px 8px 32px;
-	resize: none;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+pre img {
+	width: 13px;
 }
 .input-bottom {
 	position: absolute;
@@ -69,6 +150,7 @@ textarea {
 	border-top: 1px solid #eee;
 	background: #fff;
 	padding-left: 260px;
+	cursor: default;
 }
 button {
 	position: absolute;
@@ -92,7 +174,8 @@ button:hover {
 #file {
 	display: none;
 }
-.file-label {
+.file-label, .faces {
+	position: relative;
 	display: inline-block;
 	padding: 0 6px;
 	margin-left: 8px;
@@ -103,7 +186,44 @@ button:hover {
 	transition: all 0.5s;
 	cursor: pointer;
 }
-.file-label:hover {
-	color: #999;
+	.file-label:hover, .faces:hover {
+		color: #999;
+	}
+.faces-drop-down {
+	position: absolute;
+	bottom: 36px;
+	left: 0;
+	background-color: #fff;
+	border: 1px solid #eee;
+	box-shadow: 1px 3px 50px rgba(0, 0, 0, 0.08);
+	border-radius: 5px;
+	padding: 8px;
+	cursor: default;
+	width: 291px;
+	outline: none;
+}
+	.faces-drop-down::after {
+		content: '';
+		position: absolute;
+		left: 16px;
+		bottom: -6px;
+		width: 10px;
+		height: 10px;
+		border-right: 1px solid #eee; 
+		border-bottom: 1px solid #eee;
+		background-color: #fff;
+		transform: rotate(45deg);
+	}
+.faces-drop-down img {
+	display: inline-block;
+	width: 33px;
+	cursor: pointer;
+	margin: 3px;
+}
+.faces-fade-enter-active, .faces-fade-leave {
+	transition: opacity .5s;
+}
+.faces-fade-enter, .faces-fade-leave-active {
+	opacity: 0;
 }
 </style>

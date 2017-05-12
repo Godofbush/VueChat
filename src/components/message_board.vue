@@ -93,6 +93,10 @@ export default {
 	min-width: 38px;
 	min-height: 38px;
 }
+.msg-msg img, .msg-msg-self img {
+	width: 26px;
+	transform: translateY(3px);
+}
 .msg-avatar {
 	float: left;
 }

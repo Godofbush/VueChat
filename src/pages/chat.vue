@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="chat-container">
 		<div class="chat-board">
 			<user-board
 				@create-room-board="createRoomBoard" 
@@ -12,7 +12,7 @@
 				:users="users">		
 			</user-board>
 			<message-board ref="messageBoard"></message-board>
-			<message-input @send-message="msgHandler"></message-input>
+			<message-input ref="messageInput" @send-message="msgHandler"></message-input>
 		</div>
 		<change-room ref="changeRoom"
 			@close-myself="closeChangeRoom" 
@@ -211,7 +211,7 @@ export default {
 			div.appendChild(spanName)
 			// 类型选择
 			if (dataType==='text') {
-				spanMsg.textContent = message
+				spanMsg.innerHTML = message
 				div.appendChild(spanMsg)
 			} else if (dataType==='image') {
 				var image = document.createElement('img')
@@ -250,16 +250,16 @@ export default {
 </script>
 
 <style scoped>
+.chat-container {
+	padding-top: 60px;
+}
 .chat-board {
-	position: absolute;
-	top: 10%;
-	left: 50%;
-	transform: translateX(-50%);
+	position: relative;
+	margin: 0 auto;
 	width: 900px;
 	height: 640px;
 	box-shadow: 0 10px 50px rgba(0, 0, 0, 0.15);
 	border-radius: 3px;
-	overflow: hidden;
 }
 footer {
 	position: absolute;
