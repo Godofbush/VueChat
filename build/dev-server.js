@@ -81,6 +81,88 @@ devMiddleware.waitUntilValid(() => {
 	_resolve()
 })
 
+/* Mongodb begin ============================================================== */
+var MongoClient = require('mongodb').MongoClient
+  , assert = require('assert');
+
+// Connection URL
+var mongourl = 'mongodb://localhost:27017/vuechat';
+/* Mongodb end ============================================================== */
+
+var querystring = require('querystring')
+// 注册处理
+app.post('/register', function(req, res) {
+	var postData = ''
+	req.on('data', function(chunk) {
+		postData+=chunk
+	})
+	req.on('end', function() {
+		var data = querystring.parse(postData)
+		var state = ''
+
+		MongoClient.connect(mongourl, function(err, db) {
+			if (err) {
+				console.log(err)
+			}
+			var connection = db.collection('document')
+			connection.findOne({"username":data.username}).then(function(value) {
+				if (value==null) {
+					connection.insertOne(data, function(err, r) {
+						assert.equal(null, err)
+						assert.equal(1, r.insertedCount)
+					})
+					state = 'OK'
+				} else {
+					state = 'repeat'
+				}
+				res.send(state)
+				db.close()
+			}, function(err){
+				console.log('err: ', err)
+				state = 'error'
+				res.send(state)
+				db.close()
+			})
+		})
+
+	})
+})
+// 登录处理
+app.post('/login', function(req, res) {
+	var postData = ''
+	req.on('data', function(chunk) {
+		postData+=chunk
+	})
+	req.on('end', function() {
+		var data = querystring.parse(postData)
+		var state = ''
+
+		MongoClient.connect(mongourl, function(err, db) {
+			if (err) {
+				console.log(err)
+			}
+			var connection = db.collection('document')
+			connection.findOne({"username":data.username}).then(function(value) {
+				if (value==null) {
+					state = 'noexist'
+				} else if (value.password!=data.password) {
+					state = 'wrongpassword'
+				} else {
+					state = 'success'
+				}
+
+				res.send(state)
+				db.close()
+			}, function(err) {
+				console.log('err: ', err)
+				state = 'error'
+				res.send(state)
+				db.close()
+			})
+		})
+	})
+})
+
 var server = require('http').Server(app)
 
 var runningserver = server.listen(port)

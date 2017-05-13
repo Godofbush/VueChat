@@ -1,14 +1,16 @@
 <template>
 	<div class="note-wrap">
 		<div class="note-cover" v-show="isShow" @click="closeMyself"></div>
-		<div class="note-board" v-show="isShow">
-			<div class="close" @click="closeMyself">x</div>
-			<change-type :change-type="changeType"
-				@join-room="joinRoom" 
-				@create-room="createRoom">
-			</change-type>
-			<p class="note-warnning">{{ warnning }}</p>
-		</div>
+		<transition name="drop">
+			<div class="note-board" v-show="isShow">
+				<div class="close" @click="closeMyself">x</div>
+				<change-type :change-type="changeType"
+					@join-room="joinRoom" 
+					@create-room="createRoom">
+				</change-type>
+				<p class="note-warnning">{{ warnning }}</p>
+			</div>
+		</transition>
 	</div>
 </template>
 
@@ -118,5 +120,12 @@ button:hover {
 	height: 1.5rem;
 	line-height: 1.5;
 	color: rgb(255, 80, 80);
+}
+
+.drop-enter-active, .drop-leave {
+	transition: all 0.5s;
+}
+.drop-enter, .drop-leave-active {
+	top: 0;
 }
 </style>

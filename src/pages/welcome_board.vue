@@ -12,10 +12,12 @@ export default {
 
 <style>
 .welcome-board {
-	position: absolute;
-	top: 30%;
-	left: 50%;
-	transform: translateX(-50%);
+	display: flex;
+	display: -webkit-flex;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	height: 90%;
 	color: #fff;
 }
 </style>

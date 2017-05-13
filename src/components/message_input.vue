@@ -1,7 +1,11 @@
 <template>
 	<div class="message-input" @click="focusPre">
-		<pre contenteditable="true" @click="setLastEditRange" @keyup="setLastEditRange"></pre>
-		<div class="input-bottom">
+		<pre contenteditable="true" @click="setLastEditRange" @keyup="setLastEditRange" v-show="!voiceMode"></pre>
+		<!-- <div class="voice-wrapper" v-show="voiceMode">
+			<h1>按住空格说话</h1>
+			<span>点击取消</span>
+		</div> -->
+		<div class="input-bottom" v-show="!voiceMode">
 			<input type="file" name="file" id="file" @change="changeFile">
 			<label for="file" class="file-label">图片</label>
 			<div class="faces">
@@ -12,6 +16,9 @@
 					</div>
 				</transition>
 			</div>
+			<!-- <div class="voice">
+				<span @click="voiceMode=true">语音</span>
+			</div> -->
 			<button @click="sendMessage">发送</button>
 		</div>
 	</div>
@@ -24,7 +31,8 @@ export default {
 			msgs: [],
 			imgs: [],
 			displayFaces: false,
-			lastEditRange: null
+			lastEditRange: null,
+			voiceMode: false
 		}
 	},
 	created: function() {
@@ -174,7 +182,7 @@ button:hover {
 #file {
 	display: none;
 }
-.file-label, .faces {
+.file-label, .faces, .voice {
 	position: relative;
 	display: inline-block;
 	padding: 0 6px;
@@ -186,7 +194,7 @@ button:hover {
 	transition: all 0.5s;
 	cursor: pointer;
 }
-	.file-label:hover, .faces:hover {
+	.file-label:hover, .faces:hover, .voice:hover {
 		color: #999;
 	}
 .faces-drop-down {
@@ -225,5 +233,20 @@ button:hover {
 }
 .faces-fade-enter, .faces-fade-leave-active {
 	opacity: 0;
+}
+.voice-wrapper {
+	width: 100%;
+	height: 100%;
+	border: 0;
+	outline: none;
+	overflow: hidden;
+	text-align: center;
+	font-size: 24px;
+	padding: 40px;
+}
+.voice-wrapper span {
+	display: inline-block;
+	font-size: 14px;
+	color: rgb(255, 100, 100);
 }
 </style>

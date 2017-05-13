@@ -1,10 +1,13 @@
 <template>
-	<div class="login-board">
-		<h1>登录</h1>
-		<input type="text" name="username" v-model="username" placeholder="请输入用户名">
-		<input type="password" name="password" v-model="password" placeholder="请输入密码">
-		<button @click="login">登录</button>
-		<router-link :to="router_links.welcome" tag="a">取消</router-link>
+	<div>
+		<div class="login-board">
+			<h1>登录</h1>
+			<p class="notice">{{notice}}</p>
+			<input type="text" name="username" v-model="username" placeholder="请输入用户名">
+			<input type="password" name="password" v-model="password" placeholder="请输入密码">
+			<button @click="login">登录</button>
+			<router-link :to="router_links.welcome" tag="a">取消</router-link>
+		</div>
 	</div>
 </template>
 
@@ -22,18 +25,40 @@ export default {
 			},
 			username: '',
 			password: '',
+			notice: ''
 		}
 	},
 	methods: {
 		// 登录跳转
 		login () {
-			socket.emit('login', {
-				username: this.username,
-				password: this.password
-			});
-			socket.on('login success', () => {
-				this.$router.push({ path: '/chat' })
-			})
+			var xmlhttp = new XMLHttpRequest()
+			xmlhttp.onreadystatechange = () => {
+				if (xmlhttp.readyState==4) {
+					if (xmlhttp.status==200) {
+						var state = xmlhttp.responseText
+						console.log(state)
+						switch (state) {
+							case 'success':
+								socket.emit('login', {
+									username: this.username,
+									password: this.password
+								});
+								socket.on('login success', () => {
+									this.$router.push({ path: '/chat' })
+								})
+							case 'noexist':
+								this.notice = '用户名或密码错误'
+							case 'wrongpassword':
+								this.notice = '用户名或密码错误'
+							default:
+						}
+					}
+				}
+			}
+			xmlhttp.open('POST', 'http://localhost:8080/login', true)
+			xmlhttp.setRequestHeader('Content-type', 'x-www-form-urlencoded')
+			xmlhttp.send('username='+this.username+'&'+'password='+this.password)
+
 		}
 	}
 }
@@ -55,7 +80,7 @@ h1 {
 input {
 	display: block;
 	width: 90%;
-	margin: 12px auto auto;
+	margin: 0 auto 12px;
 	line-height: 34px;
 	font-size: 16px;
 	padding-left: 5px;
@@ -87,5 +112,11 @@ a {
 	font-size: 12px;
 	color: rgb(255, 80, 80);
 	text-decoration: none;
+}
+.notice {
+	margin-top: 12px;
+	color: rgb(255, 100, 100);
+	text-align: left;
+	padding-left: 14px;
 }
 </style>

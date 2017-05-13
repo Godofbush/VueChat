@@ -8,6 +8,8 @@
 # install dependencies
 npm install
 
+# need make a dir named 'data' first
+# and run the mongodb
 # serve with hot reload at localhost:8080
 npm run dev
 

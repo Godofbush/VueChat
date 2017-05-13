@@ -10,6 +10,7 @@
     "build": "node build/build.js"
   },
   "dependencies": {
+    "mongodb": "^2.2.26",
     "socket.io": "^1.7.3",
     "vue": "^2.2.6",
     "vue-router": "^2.3.1"
