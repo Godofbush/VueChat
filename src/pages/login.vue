@@ -55,7 +55,7 @@ export default {
 					}
 				}
 			}
-			xmlhttp.open('POST', 'http://localhost:8080/login', true)
+			xmlhttp.open('POST', 'http://localhost:8011/login', true)
 			xmlhttp.setRequestHeader('Content-type', 'x-www-form-urlencoded')
 			xmlhttp.send('username='+this.username+'&'+'password='+this.password)
 

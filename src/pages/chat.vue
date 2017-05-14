@@ -50,16 +50,35 @@ export default {
 		}
 	},
 	created () {
-		this.fetchData()
+		if (document.cookie) {
+			var data = {}
+			document.cookie.split(';').forEach(function(val) {
+				var cookieVal = val.split('=')
+				data[cookieVal[0]] = cookieVal[1]
+			})
+
+			this.username = data.myAccount
+		}
+	},
+	mounted () {
+		socket.on('reconnecting', function (data) {  
+            console.log("reconnecting");
+        });  
+        socket.on('reconnect', function (data) {  
+            console.log("reconnect");  
+        });  
+        socket.on('disconnect', function (data) {  
+            console.log("disconnect");  
+        });
 	},
 	methods: {
 		// 获取用户数据
-		fetchData () {
-			socket.emit('fetch data')
-			socket.once('return data', (userInfo) => {
-				this.username = userInfo.username
-			})
-		},
+		// fetchData () {
+		// 	socket.emit('fetch data')
+		// 	socket.once('return data', (userInfo) => {
+		// 		this.username = userInfo.username
+		// 	})
+		// },
 		// 显示 change room 组建，加载其子组件
 		createRoomBoard () {
 			this.isShowChangeRoomBoard = true // 显示 change room 组件
@@ -172,7 +191,23 @@ export default {
 			}
 		},
 		logout () {
+			var xmlhttp = new XMLHttpRequest()
+			xmlhttp.onreadystatechange = () => {
+				if (xmlhttp.readyState==4) {
+					if (xmlhttp.status==200) {
+						socket.emit('logout')
+						socket.once('logout success', () => {
+							if (xmlhttp.response=='OK') {
+								this.$router.push({path: '/'})
+							}
+						})
+					}
+				}
+			}
 
+			xmlhttp.open('POST', '/dologout', true)
+			xmlhttp.setRequestHeader('Content-type', 'x-www-form-urlencoded')
+			xmlhttp.send()
 		},
 		// 关闭 change room 面板
 		closeChangeRoom () {

@@ -72,7 +72,7 @@ export default {
 					}
 				}
 			}
-			xmlhttp.open('POST', 'http://localhost:8080/register', true)
+			xmlhttp.open('POST', 'http://localhost:8011/register', true)
 			xmlhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
 			xmlhttp.send('username='+data.username+'&'+'password='+data.password)
 		}

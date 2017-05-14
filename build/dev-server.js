@@ -128,6 +128,15 @@ app.post('/register', function(req, res) {
 	})
 })
 // 登录处理
+var cookieParser = require('cookie-parser')
+var session = require('express-session')
+app.use(cookieParser())
+app.use(session({
+	resave: true, // don't save session if unmodified  
+	saveUninitialized: false, // don't create session until something stored  
+	secret: 'love' 
+}))
+
 app.post('/login', function(req, res) {
 	var postData = ''
 	req.on('data', function(chunk) {
@@ -149,6 +158,9 @@ app.post('/login', function(req, res) {
 					state = 'wrongpassword'
 				} else {
 					state = 'success'
+					res.cookie('myAccount', data.username, { expires: new Date(Date.now() + 48*60*60*1000) })
+					console.log('设置了cookie')
+					req.session.user = data.username
 				}
 
 				res.send(state)
@@ -163,6 +175,35 @@ app.post('/login', function(req, res) {
 	})
 })
 
+var usernameCache = ''  // session 存在期间缓存用户名
+
+// 登录
+app.post('/checkLogin', function(req, res) {
+	var username = ''
+	console.log(req.cookies)
+	if (req.cookies.myAccount!=undefined) {
+		console.log(req.cookies.myAccount)
+		username = req.cookies.myAccount
+	}
+	console.log('session: ', req.session.user)
+	if (req.session.user && req.session.user==username) {
+		usernameCache = req.session.user  // 缓存用户名
+		console.log('to: chat')
+		res.send('chat')
+	} else {
+		console.log('to: index')
+		res.send('index')
+	}
+})
+
+// 注销
+app.post('/dologout', function(req, res) {
+	console.log('logout: ', req.cookies)
+	req.session.user = undefined
+	usernameCache = ''
+	res.send('OK')
+})
+
 var server = require('http').Server(app)
 
 var runningserver = server.listen(port)
@@ -174,10 +215,19 @@ var room_info = {};  // 维护一个全局对象，用来存储房间信息
 var rooms = [];      // 用于存储当前存在的所有房间的房间号
 var timeouts = {};     // 释放房间计时器
 io.on('connection', function (socket) {
+	console.log('一个连接成功生成')
+	console.log('id: ', socket.id)
+	console.log('rooms: ', socket.rooms)
+
 	var userInfo = {
 		username: ''
 	};
 	var room_id_before = '';
+
+	// 若存在缓存， 则读取缓存
+	if (usernameCache!='') {
+		userInfo.username = usernameCache
+	}
 
 	// 登录
 	socket.on('login', function ( loginData ) {
@@ -266,6 +316,7 @@ io.on('connection', function (socket) {
 
 	// 离开房间
 	socket.on('leave room', function() {
+		console.log('room id before: ', room_id_before)
 		var id = 'R' + room_id_before;
 		leaveRoom(userInfo.username, room_id_before, function() {
 			console.log('离开房间 %s 成功', room_id_before);
@@ -283,6 +334,56 @@ io.on('connection', function (socket) {
 			});
 			room_id_before = '';
 		})
+	})
+
+
+	// 断开连接
+	socket.on('disconnect', function() {
+		console.log('%s disconnect', userInfo.username)
+		var id = 'R' + room_id_before;
+		leaveRoom(userInfo.username, room_id_before, function() {
+			console.log('离开房间 %s 成功', room_id_before);
+			socket.emit('leave room success', {
+				username: userInfo.username,
+				roomId: room_id_before,
+				users: room_info[id].users,
+				quantity: room_info[id].quantity
+			});
+			socket.to(id).broadcast.emit('someone left', {
+				username: userInfo.username,
+				roomId: room_id_before,
+				users: room_info[id].users,
+				quantity: room_info[id].quantity
+			});
+			room_id_before = '';
+		})
+
+		socket.emit('logout success')
+	})
+
+	// 注销登录
+	socket.on('logout', function() {
+		console.log('准备注销')
+		var id = 'R' + room_id_before;
+		if (room_id_before) {
+			leaveRoom(userInfo.username, room_id_before, function() {
+				console.log('离开房间 %s 成功', room_id_before);
+				socket.emit('leave room success', {
+					username: userInfo.username,
+					roomId: room_id_before,
+					users: room_info[id].users,
+					quantity: room_info[id].quantity
+				});
+				socket.to(id).broadcast.emit('someone left', {
+					username: userInfo.username,
+					roomId: room_id_before,
+					users: room_info[id].users,
+					quantity: room_info[id].quantity
+				});
+				room_id_before = '';
+			})
+		}
+		socket.emit('logout success')
 	})
 
 	// 创建房间方法
@@ -337,7 +438,14 @@ io.on('connection', function (socket) {
 
 	// 离开房间方法
 	var leaveRoom = function ( username, roomId, success ) {
+		console.log(username)
+		console.log(roomId)
 		var room_id = roomId;
+
+		if (!room_id) { 
+			console.log('未进入房间')
+			return 
+		}
 
 		var id = 'R' + room_id;
 		socket.leave(id);
