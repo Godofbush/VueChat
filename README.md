@@ -8,8 +8,8 @@
 # 安装依赖
 npm install
 
-# 开启 mongodb 服务
-mongd --dbpath=db
+# 开启 mongodb 服务，首先在项目根目录下新建一个存放 MongoDB 数据的文件夹
+mongd --dbpath=新建文件夹名
 
 # 运行热重载服务器
 npm run dev
