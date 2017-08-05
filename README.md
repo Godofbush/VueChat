@@ -1,21 +1,16 @@
-# vue_chat
+# VueChat
 
-> This is my graduation project
+> 这是我的毕业设计。一个用 Vue+MongoDB+Node 写的实时聊天单页应用，全站使用前端路由，同级组件间的通信使用组件代理实现，未来准备用 Vuex 实现，使组件逻辑更清晰。
 
-## Build Setup
+## 安装运行
 
 ``` bash
-# install dependencies
+# 安装依赖
 npm install
 
-# serve with hot reload at localhost:8080
+# 开启 mongodb 服务
+mongd --dbpath=db
+
+# 运行热重载服务器
 npm run dev
-
-# build for production with minification
-npm run build
-
-# build for production and view the bundle analyzer report
-npm run build --report
 ```
-
-For detailed explanation on how things work, checkout the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
