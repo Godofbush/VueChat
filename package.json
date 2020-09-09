@@ -12,7 +12,7 @@
   "dependencies": {
     "cookie-parser": "^1.4.3",
     "express-session": "^1.15.2",
-    "mongodb": "^2.2.26",
+    "mongodb": "^3.6.1",
     "socket.io": "^1.7.3",
     "vue": "^2.2.6",
     "vue-router": "^2.3.1"
